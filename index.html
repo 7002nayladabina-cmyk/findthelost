@@ -3,12 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ff6a00">
-<meta name="description" content="Найдись: поиск пропавших людей и питомцев рядом с вами">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Найдись — поиск пропавших людей и питомцев</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap">
 <style>
@@ -144,18 +138,56 @@ dialog{border:0;border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 <dialog id="dView"><div id="vBody"></div></dialog>
 <div class="toast" id="toast" hidden role="status"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 /* === РЕЖИМЫ ===
    1) Оставьте две строки ниже как есть: сайт работает прямо на этом компьютере, без интернета и без Claude.
       Объявления хранятся в этом браузере и других людей не видят.
    2) Впишите данные своего проекта Supabase (Project Settings → API): сайт станет общим для всех. */
-const SUPABASE_URL="PASTE_PROJECT_URL";
-const SUPABASE_KEY="PASTE_ANON_PUBLIC_KEY";
+const SUPABASE_URL="https://jwqehnlxjtuqvhwyynco.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3cWVobmx4anR1cXZod3l5bmNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMTkwMjAsImV4cCI6MjEwNzg5NTAyMH0.coALxhEQavEJiVM8Evm3XDZ3GfTDI4zHFWiiNRFLCKU";
 /* ============================================================================== */
-const CFG_OK=/^https:\/\//.test(SUPABASE_URL)&&SUPABASE_KEY.length>40&&window.supabase;
-const sb=CFG_OK?supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
-async function authUser(){let {data:{session}}=await sb.auth.getSession();if(!session){const r=await sb.auth.signInAnonymously();if(r.error)throw r.error;session=r.data.session}sb.auth.onAuthStateChange((ev,s)=>{if(ev==="SIGNED_IN"&&s&&uid&&s.user.id!==uid)location.reload()});return session.user}
+const CFG_OK=/^https:\/\//.test(SUPABASE_URL)&&SUPABASE_KEY.length>40;
+let dbErr="";
+function mkClient(U,K){
+ const SK="sbsess";
+ const load=()=>{try{return JSON.parse(localStorage.getItem(SK))}catch(e){return null}};
+ const save=s=>{try{s?localStorage.setItem(SK,JSON.stringify(s)):localStorage.removeItem(SK)}catch(e){}};
+ const H=(tok,extra)=>({apikey:K,Authorization:"Bearer "+(tok||K),"Content-Type":"application/json",...(extra||{})});
+ const mk=j=>j&&j.access_token?{access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600),user:j.user}:null;
+ const jf=async(path,opt)=>{const r=await fetch(U+path,opt),t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){}if(!r.ok)return{data:null,error:{message:(j&&(j.msg||j.message||j.error_description||j.error))||("HTTP "+r.status)}};return{data:j,error:null}};
+ const auth={
+  async getSession(){let s=load();if(s&&s.expires_at-60<Date.now()/1000){const r=await jf("/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:H(),body:JSON.stringify({refresh_token:s.refresh_token})});s=r.error?null:mk(r.data);save(s)}return{data:{session:s}}},
+  async signInAnonymously(){const r=await jf("/auth/v1/signup",{method:"POST",headers:H(),body:"{}"});if(r.error)return{data:{session:null},error:r.error};const s=mk(r.data);save(s);return{data:{session:s},error:null}},
+  onAuthStateChange(){},
+  async signOut(){const s=load();if(s)await jf("/auth/v1/logout",{method:"POST",headers:H(s.access_token)}).catch(()=>{});save(null);return{error:null}},
+  async updateUser(p){const s=load();if(!s)return{error:{message:"нет сессии"}};const r=await jf("/auth/v1/user",{method:"PUT",headers:H(s.access_token),body:JSON.stringify(p)});return{error:r.error}},
+  async signInWithOtp(p){const r=await jf("/auth/v1/otp",{method:"POST",headers:H(),body:JSON.stringify({email:p.email,create_user:false})});return{error:r.error}},
+  async fromHash(){const h=new URLSearchParams(location.hash.slice(1));if(!h.get("access_token"))return;const r=await jf("/auth/v1/user",{headers:H(h.get("access_token"))});if(r.error)return;save({access_token:h.get("access_token"),refresh_token:h.get("refresh_token"),expires_at:+h.get("expires_at")||Math.floor(Date.now()/1000)+3600,user:r.data});history.replaceState(null,"",location.pathname+location.search)}
+ };
+ const tok=async()=>{const {data:{session}}=await auth.getSession();return session&&session.access_token};
+ class QB{constructor(){this.m="GET";this.q=[];this.body=null;this.sel=null;this.one=false;this.up=false}
+  select(c){this.sel=c;return this}
+  eq(c,v){this.q.push(c+"=eq."+encodeURIComponent(v));return this}
+  contains(c,o){this.q.push(c+"=cs."+encodeURIComponent(JSON.stringify(o)));return this}
+  order(c,o){this.q.push("order="+encodeURIComponent(c)+"."+(o&&o.ascending===false?"desc":"asc"));return this}
+  limit(n){this.q.push("limit="+n);return this}
+  maybeSingle(){this.one=true;this.q.push("limit=1");return this}
+  upsert(b){this.m="POST";this.body=b;this.up=true;return this}
+  update(b){this.m="PATCH";this.body=b;return this}
+  delete(){this.m="DELETE";return this}
+  then(res,rej){return this.run().then(res,rej)}
+  async run(){try{const t=await tok(),extra={},q=[...this.q];
+   if(this.m==="GET")q.unshift("select="+encodeURIComponent(this.sel||"*"));
+   else if(this.up){q.push("on_conflict=path");extra.Prefer="resolution=merge-duplicates,return=minimal"}
+   else extra.Prefer="return=minimal";
+   const r=await jf("/rest/v1/docs"+(q.length?"?"+q.join("&"):""),{method:this.m,headers:H(t,extra),body:this.body?JSON.stringify(this.body):undefined});
+   if(r.error)return{data:null,error:r.error};
+   if(this.m!=="GET")return{data:null,error:null};
+   return{data:this.one?((r.data&&r.data[0])||null):(r.data||[]),error:null}}catch(e){return{data:null,error:{message:String(e&&e.message||e)}}}}}
+ return{auth,from:()=>new QB(),async rpc(n){const t=await tok(),r=await jf("/rest/v1/rpc/"+n,{method:"POST",headers:H(t),body:"{}"});return{error:r.error}}}
+}
+const sb=CFG_OK?mkClient(SUPABASE_URL,SUPABASE_KEY):null;
+async function authUser(){await sb.auth.fromHash();let {data:{session}}=await sb.auth.getSession();if(!session){const r=await sb.auth.signInAnonymously();if(r.error)throw r.error;session=r.data.session}sb.auth.onAuthStateChange((ev,s)=>{if(ev==="SIGNED_IN"&&s&&uid&&s.user.id!==uid)location.reload()});return session.user}
 const snapOf=r=>({id:r.id,exists:true,data:()=>r.data});
 function Q(coll){return{c:coll,f:[],o:null,l:null,
  where(f,op,v){this.f.push([f,op,v]);return this},
@@ -166,7 +198,7 @@ function Q(coll){return{c:coll,f:[],o:null,l:null,
   if(this.o)q=q.order("data->>"+this.o[0],{ascending:this.o[1]!=="desc"});
   if(this.l)q=q.limit(this.l);
   const {data,error}=await q;if(error)throw error;const docs=data.map(snapOf);return{docs,size:docs.length,empty:!docs.length}},
- onSnapshot(cb,er,ms){let on=true,last=null;const run=async()=>{try{const s=await this.get(),k=JSON.stringify(s.docs.map(d=>[d.id,d.data()]));if(k!==last){last=k;on&&cb(s)}}catch(e){er&&er(e)}};run();const h=()=>run();addEventListener("ldocs",h);const t=setInterval(run,ms||10000);return()=>{on=false;clearInterval(t);removeEventListener("ldocs",h)}},
+ onSnapshot(cb,er,ms){let on=true,last=null;const run=async()=>{if(document.hidden&&last!==null)return;try{const s=await this.get(),k=JSON.stringify(s.docs.map(d=>[d.id,d.data()]));if(k!==last){last=k;on&&cb(s)}}catch(e){er&&er(e)}};run();const h=()=>run();addEventListener("ldocs",h);const t=setInterval(run,ms||30000);return()=>{on=false;clearInterval(t);removeEventListener("ldocs",h)}},
  async add(d){const id=crypto.randomUUID();await D(this.c+"/"+id).set(d);return{id}}}}
 function D(path){const i=path.lastIndexOf("/"),coll=path.slice(0,i),id=path.slice(i+1);return{id,
  async get(){const {data,error}=await sb.from("docs").select("id,data").eq("coll",coll).eq("id",id).maybeSingle();if(error)throw error;return data?snapOf(data):{id,exists:false,data:()=>undefined}},
@@ -211,8 +243,14 @@ const kindT=p=>p.kind==="person"?"Человек":esc(p.species||"Питомец
 const unread=c=>c.lastBy&&c.lastBy!==uid&&(c.lastAt||0)>(seen[c.id]||0);
 const pname=id=>(profiles[id]&&profiles[id].name)||"Участник";
 const isOwn=p=>mine.has(p.id)||(uid&&p.authorId===uid);
+let sndOn=LS("snd",true),AC=null,msgN=null;
+function unlockAudio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume()}catch(e){}}
+["pointerdown","keydown","touchstart"].forEach(ev=>addEventListener(ev,unlockAudio,{passive:true}));
+function ding(){try{unlockAudio();if(AC){const t=AC.currentTime;[[880,0],[1318,.14]].forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.35,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.5);o.connect(g);g.connect(AC.destination);o.start(t+d);o.stop(t+d+.55)})}if(navigator.vibrate)navigator.vibrate([120,60,120])}catch(e){}}
+const ss=LS("ss",{}),wat=new Set();
+function watchSightings(){posts.filter(p=>isOwn(p)&&p.status!=="found"&&!wat.has(p.id)).forEach(p=>{wat.add(p.id);db.collection("posts/"+p.id+"/sightings").onSnapshot(s=>{const n=s.size;if(ss[p.id]!=null&&n>ss[p.id])notify("Вам ответили по карточке: "+p.name);ss[p.id]=n;SV("ss",ss)},()=>{},30000)})}
 function toast(t){const e=$("#toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,4500)}
-function notify(t){toast(t);try{if(window.Notification&&Notification.permission==="granted")new Notification("Найдись",{body:t})}catch(e){}}
+function notify(t){toast(t);if(sndOn)ding();try{if(window.Notification&&Notification.permission==="granted")new Notification("Найдись",{body:t})}catch(e){}}
 function getPos(cb,out){if(!navigator.geolocation){out&&(out.textContent="Геолокация недоступна");return}navigator.geolocation.getCurrentPosition(p=>cb({lat:p.coords.latitude,lng:p.coords.longitude}),()=>{out&&(out.textContent="Не удалось определить место")},{timeout:8000})}
 
 /* ---------- колода ---------- */
@@ -223,7 +261,7 @@ const cardHtml=(p,b)=>{const d=dist(p);return `<article class="card${b?" back":"
 function renderDeck(){
  const d=$("#deck"),Q=queue(),s=!db?"nodb":!loaded?"load":Q.slice(0,2).map(p=>p.id+p.status+(p.photo||"").length).join()||"empty";
  if(s===sig)return;sig=s;$("#ctl").hidden=true;
- if(!db){d.innerHTML=emptyH("Нет связи с базой данных","Проверьте интернет и ключи Supabase в начале файла (SUPABASE_URL и SUPABASE_KEY).");return}
+ if(!db){d.innerHTML=emptyH("Нет связи с базой данных","Проверьте интернет. "+(dbErr?"Причина: "+esc(dbErr):"Проверьте ключи Supabase в начале файла."));return}
  if(!loaded){d.innerHTML=emptyH("Загрузка","Ищем объявления…");return}
  if(!Q.length){d.innerHTML=emptyH("Пока всё просмотрено","Новые объявления появятся здесь. Вы можете создать своё кнопкой «+».",skipped.size?'<p><button class="btn alt" id="reset">Показать пропущенных снова</button></p>':"");const r=$("#reset");r&&(r.onclick=()=>{skipped.clear();persist();sig="";renderDeck()});return}
  $("#ctl").hidden=false;
@@ -249,7 +287,7 @@ async function syncJoined(){if(db&&uid)try{await db.doc("data/users/"+uid+"/save
 async function join(p){joined.add(p.id);skipped.delete(p.id);persist();toast("Вы в поиске: "+p.name);try{await db.doc("posts/"+p.id+"/searchers/"+key()).set({at:Date.now()})}catch(e){}syncJoined()}
 async function leave(p){joined.delete(p.id);persist();try{await db.doc("posts/"+p.id+"/searchers/"+key()).delete()}catch(e){}syncJoined()}
 async function loadJoined(){if(!db||!uid)return;try{const r=db.doc("data/users/"+uid+"/saved"),s=await r.get();if(s.exists)(s.data().ids||[]).forEach(i=>joined.add(i));persist();await r.set({ids:[...joined]});sig=""}catch(e){}}
-function checkChanges(old){if(!old.length)return;const ids=new Set(old.map(o=>o.id));posts.forEach(n=>{const o=old.find(x=>x.id===n.id);if(o&&joined.has(n.id)&&o.status!=="found"&&n.status==="found")notify("Найден: "+n.name+". Спасибо, что искали!");if(!o&&!ids.has(n.id)&&me){const d=dist(n);if(d!=null&&d<5)notify("Новая пропажа рядом: "+n.name)}})}
+function checkChanges(old,first){if(first)return;const ids=new Set(old.map(o=>o.id));posts.forEach(n=>{const o=old.find(x=>x.id===n.id);if(o&&joined.has(n.id)&&o.status!=="found"&&n.status==="found")notify("Найден: "+n.name+". Спасибо, что искали!");if(!o&&!ids.has(n.id)&&me&&!isOwn(n)&&n.status!=="found"){const d=dist(n);if(d!=null&&d<5)notify("Новая пропажа рядом ("+d.toFixed(1)+" км): "+n.name)}})}
 
 /* ---------- меню ---------- */
 function setDrawer(o){$("#drawer").classList.toggle("open",o);$("#scrim").hidden=!o;$("#menuBtn").setAttribute("aria-expanded",o)}
@@ -270,7 +308,7 @@ function renderSheet(){
  if(sh==="found"){const L=posts.filter(p=>p.status==="found").sort((a,b)=>b.createdAt-a.createdAt);B.innerHTML='<p class="mut">Найдено: '+L.length+'. Спасибо всем, кто искал.</p>'+(L.length?L.map(p=>rowHtml(p)).join(""):'<div class="note">Пока никого не отметили найденным.</div>')}
  if(sh==="joined"){const L=[...joined].map(id=>posts.find(p=>p.id===id)).filter(Boolean);B.innerHTML=L.length?L.map(p=>rowHtml(p,`<p style="margin:-4px 0 12px"><button class="btn alt sm" data-leave="${esc(p.id)}">Выйти из поиска</button></p>`)).join(""):'<div class="note">Вы ещё не присоединились ни к одному поиску. Нажмите ✓ на карточке, и она появится здесь.</div>'}
  if(sh==="mine"){const L=posts.filter(isOwn);B.innerHTML=L.length?L.map(p=>rowHtml(p,p.status==="found"?"":`<p style="margin:-4px 0 12px"><button class="btn sm" data-found="${esc(p.id)}">Отметить найденным</button></p>`)).join(""):'<div class="note">У вас пока нет объявлений. Кнопка «+» вверху создаст первое.</div>'}
- if(sh==="settings"&&!B.firstChild)B.innerHTML=`<div class="in">${LOCAL?'<div class="note">Сейчас сайт работает только на этом компьютере: объявления хранятся в этом браузере, другие люди их не видят. Чтобы сайт стал общим, подключите Supabase (инструкция в начале файла).</div>':""}<h3>Кого показывать</h3><div class="row">${[["all","Все"],["person","Люди"],["pet","Питомцы"]].map(([v,l])=>`<button class="btn alt" data-kind="${v}" aria-pressed="${kindF===v}">${l}</button>`).join("")}</div><h3>Рядом со мной</h3><button class="btn alt" id="gp">Показать ближайших первыми</button><span class="mut" id="gpS">${me?"Местоположение сохранено":""}</span><h3>Уведомления</h3><button class="btn alt" id="nt">Включить уведомления браузера</button><span class="mut" id="ntS">Приходят, пока страница открыта.</span><h3>Колода</h3><button class="btn alt" id="rs">Показать пропущенных снова</button></div>`;
+ if(sh==="settings"&&!B.firstChild)B.innerHTML=`<div class="in">${LOCAL?'<div class="note">Сейчас сайт работает только на этом компьютере: объявления хранятся в этом браузере, другие люди их не видят. Чтобы сайт стал общим, подключите Supabase (инструкция в начале файла).</div>':""}<h3>Кого показывать</h3><div class="row">${[["all","Все"],["person","Люди"],["pet","Питомцы"]].map(([v,l])=>`<button class="btn alt" data-kind="${v}" aria-pressed="${kindF===v}">${l}</button>`).join("")}</div><h3>Рядом со мной</h3><p class="mut">Сайт подаст звуковой сигнал, когда в радиусе 5 км появится новая карточка, пока страница открыта. Ближайшие карточки идут в ленте первыми.</p><button class="btn alt" id="gp">Определить моё место</button><span class="mut" id="gpS">${me?"Местоположение сохранено":""}</span><h3>Звук</h3><button class="btn alt" id="snd" aria-pressed="${sndOn}">Звук уведомлений: ${sndOn?"вкл":"выкл"}</button><h3>Уведомления</h3><button class="btn alt" id="nt">Включить уведомления браузера</button><span class="mut" id="ntS">Приходят, пока страница открыта.</span><h3>Колода</h3><button class="btn alt" id="rs">Показать пропущенных снова</button></div>`;
  if(sh==="account")renderProfile();
  if(sh==="chats")renderChats();
  bdg()
@@ -283,6 +321,7 @@ $("#shB").addEventListener("click",e=>{
  if(e.target.id==="gp")return getPos(p=>{me=p;SV("me",p);sig="";$("#gpS").textContent="Ближайшие теперь первыми"},$("#gpS"));
  if(e.target.id==="nt")return(async()=>{try{if(!window.Notification){$("#ntS").textContent="Браузер не поддерживает уведомления";return}const r=await Notification.requestPermission();$("#ntS").textContent=r==="granted"?"Включено, пока страница открыта":"Разрешение не выдано"}catch(x){$("#ntS").textContent="Не удалось включить"}})();
  if(e.target.id==="rs"){skipped.clear();persist();sig="";toast("Пропущенные вернутся в колоду");return}
+ if(e.target.id==="snd"){sndOn=!sndOn;SV("snd",sndOn);e.target.textContent="Звук уведомлений: "+(sndOn?"вкл":"выкл");e.target.setAttribute("aria-pressed",sndOn);if(sndOn)ding();return}
  const c=e.target.closest(".rowc[data-id]");if(c){const p=posts.find(x=>x.id===c.dataset.id);p&&openView(p)}
 });
 
@@ -314,18 +353,18 @@ function renderChats(){
  const L=[...myChats].sort((a,b)=>(b.lastAt||0)-(a.lastAt||0));
  $("#chl").innerHTML=L.length?L.map(c=>`<button class="rowc" data-c="${esc(c.id)}" aria-pressed="${c.id===curChat}"><span><b>${unread(c)?"● ":""}${esc(c.postName)}</b><br><span class="mut">${esc(pname((c.members||[]).find(m=>m!==uid)))}</span></span></button>`).join(""):'<div class="note">Чатов пока нет. В объявлении нажмите «Написать автору».</div>';
  $("#chl").onclick=e=>{const b=e.target.closest("[data-c]");b&&selectChat(b.dataset.c)};
- $("#mf").onsubmit=async e=>{e.preventDefault();const t=$("#mt").value.trim();if(!t||!curChat)return;$("#mt").value="";try{const now=Date.now();const cc=myChats.find(x=>x.id===curChat);await db.collection("chats/"+curChat+"/msgs").add({from:uid,text:t,at:now,members:cc?cc.members:[]});await db.doc("chats/"+curChat).update({lastAt:now,lastBy:uid})}catch(x){toast("Не удалось отправить")}};
+ $("#mf").onsubmit=async e=>{e.preventDefault();const t=$("#mt").value.trim();if(!t||!curChat)return;$("#mt").value="";try{const now=Date.now();const cc=myChats.find(x=>x.id===curChat);if(!cc){toast("Чат ещё загружается, попробуйте через несколько секунд");return}await db.collection("chats/"+curChat+"/msgs").add({from:uid,text:t,at:now,members:cc.members});await db.doc("chats/"+curChat).update({lastAt:now,lastBy:uid})}catch(x){toast("Не удалось отправить: "+(x.message||x))}};
 }
 function selectChat(id){
- curChat=id;unsubM&&unsubM();const c=myChats.find(x=>x.id===id);if(c){seen[id]=c.lastAt||Date.now();persist()}
+ curChat=id;msgN=null;unsubM&&unsubM();const c=myChats.find(x=>x.id===id);if(c){seen[id]=c.lastAt||Date.now();persist()}
  $("#mf").hidden=false;
- unsubM=db.collection("chats/"+id+"/msgs").orderBy("at").onSnapshot(s=>{const m=$("#ml");if(!m)return;m.innerHTML=s.docs.length?s.docs.map(d=>{const v=d.data();return `<div class="msg ${v.from===uid?"me":""}"><div class="mut">${v.from===uid?"Вы":esc(pname(v.from))}</div>${esc(v.text)}</div>`}).join(""):'<span class="mut">Напишите первое сообщение.</span>';m.scrollTop=m.scrollHeight;seen[id]=Date.now();persist();bdg()},()=>{},3000);
+ unsubM=db.collection("chats/"+id+"/msgs").orderBy("at").onSnapshot(s=>{const m=$("#ml");if(!m)return;if(msgN!==null&&s.docs.length>msgN&&s.docs[s.docs.length-1].data().from!==uid&&sndOn)ding();msgN=s.docs.length;m.innerHTML=s.docs.length?s.docs.map(d=>{const v=d.data();return `<div class="msg ${v.from===uid?"me":""}"><div class="mut">${v.from===uid?"Вы":esc(pname(v.from))}</div>${esc(v.text)}</div>`}).join(""):'<span class="mut">Напишите первое сообщение.</span>';m.scrollTop=m.scrollHeight;seen[id]=Date.now();persist();bdg()},()=>{},3000);
  renderChats();
 }
 async function openChat(p){
  if(!uid||!db){toast("Нет связи с базой данных.");return}
  const id=p.id+"_"+uid;
- try{const r=db.doc("chats/"+id),s=await r.get();if(!s.exists)await r.set({postId:p.id,postName:p.name,members:[p.authorId,uid],lastAt:Date.now(),lastBy:""});$("#dView").close();openSheet("chats");selectChat(id)}catch(e){toast("Не удалось открыть чат")}
+ try{const r=db.doc("chats/"+id),s=await r.get();let c;if(s.exists)c=s.data();else{c={postId:p.id,postName:p.name,members:[p.authorId,uid],lastAt:Date.now(),lastBy:""};await r.set(c)}if(!myChats.some(x=>x.id===id))myChats.push({id,...c});$("#dView").close();openSheet("chats");selectChat(id)}catch(e){toast("Не удалось открыть чат")}
 }
 
 /* ---------- новое объявление ---------- */
@@ -370,23 +409,24 @@ function openView(p){
  if($("#delCard"))twice($("#delCard"),"Нажмите ещё раз: удалить навсегда",async()=>{try{await db.doc("posts/"+p.id).delete();joined.delete(p.id);mine.delete(p.id);skipped.delete(p.id);persist();posts=posts.filter(x=>x.id!==p.id);sig="";dV.close();toast("Карточка удалена");renderDeck();if(sh)renderSheet()}catch(e){toast("Не удалось удалить карточку")}});
  $("#rep").onclick=async()=>{try{await db.collection("reports").add({postId:p.id,createdAt:Date.now()});$("#rep").textContent="Жалоба отправлена"}catch(e){$("#rep").textContent="Не удалось отправить"}};
  $("#sf").onsubmit=async e=>{e.preventDefault();const f=e.target;try{await db.collection("posts/"+p.id+"/sightings").add({where:f.w.value.trim(),comment:f.c.value.trim(),createdAt:Date.now()});f.reset();f.hidden=true}catch(x){toast("Не удалось отправить")}};
- if(db)unsubS=db.collection("posts/"+p.id+"/sightings").orderBy("createdAt","desc").onSnapshot(s=>{if(s.empty)return;$("#sl").innerHTML=s.docs.map(d=>{const v=d.data();return `<div class="sight"><b>${esc(v.where)}</b>${v.comment?`<div>${esc(v.comment)}</div>`:""}<div class="mut">${ago(v.createdAt)}</div></div>`}).join("")},()=>{});
+ if(db)unsubS=db.collection("posts/"+p.id+"/sightings").orderBy("createdAt","desc").onSnapshot(s=>{ss[p.id]=s.size;SV("ss",ss);if(s.empty)return;$("#sl").innerHTML=s.docs.map(d=>{const v=d.data();return `<div class="sight"><b>${esc(v.where)}</b>${v.comment?`<div>${esc(v.comment)}</div>`:""}<div class="mut">${ago(v.createdAt)}</div></div>`}).join("")},()=>{});
 }
 
 /* ---------- запуск ---------- */
 async function init(){
+ try{if("serviceWorker" in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if(window.caches)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{})}catch(e){}
  renderDeck();
- try{if(CFG_OK){const u=await authUser();uid=u.id;db=DB}else{uid=gk;db=DB}}catch(e){console.error(e)}
+ try{if(CFG_OK){const u=await authUser();uid=u.id;db=DB}else{uid=gk;db=DB}}catch(e){console.error(e);dbErr=String(e&&e.message||e)}
  if(!db){sig="";renderDeck();return}
- db.collection("posts").orderBy("createdAt","desc").limit(300).onSnapshot(s=>{const old=posts;posts=s.docs.map(d=>({id:d.id,...d.data()}));loaded=true;renderDeck();if(sh)renderSheet();checkChanges(old)},()=>{loaded=true;renderDeck()});
+ db.collection("posts").orderBy("createdAt","desc").limit(300).onSnapshot(s=>{const first=!loaded,old=posts;posts=s.docs.map(d=>({id:d.id,...d.data()}));loaded=true;renderDeck();if(sh)renderSheet();checkChanges(old,first);watchSightings()},()=>{loaded=true;renderDeck()},15000);
  db.collection("profiles").onSnapshot(s=>{profiles={};s.docs.forEach(d=>profiles[d.id]=d.data());bdg();if(sh==="account"||sh==="chats")renderSheet()},()=>{});
  loadJoined();
- if(uid)db.collection("chats").where("members","array-contains",uid).onSnapshot(s=>{const prev=new Set(myChats.filter(unread).map(c=>c.id));myChats=s.docs.map(d=>({id:d.id,...d.data()}));if(chatInit)myChats.filter(c=>unread(c)&&!prev.has(c.id)&&c.id!==curChat).forEach(c=>notify("Новое сообщение: "+c.postName));chatInit=true;bdg();if(sh==="chats")renderChats()},()=>{});
- if(LOCAL)setTimeout(()=>toast("Режим на этом компьютере: объявления видны только в этом браузере."),4500);
+ if(me&&navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:"geolocation"}).then(r=>{if(r.state==="granted")getPos(p=>{me=p;SV("me",p);sig=""})}).catch(()=>{});
+ if(uid)db.collection("chats").where("members","array-contains",uid).onSnapshot(s=>{const prev=new Set(myChats.filter(unread).map(c=>c.id));myChats=s.docs.map(d=>({id:d.id,...d.data()}));if(chatInit)myChats.filter(c=>unread(c)&&!prev.has(c.id)&&c.id!==curChat).forEach(c=>notify("Новое сообщение: "+c.postName));chatInit=true;bdg();if(sh==="chats")renderChats()},()=>{},8000);
+ if(LOCAL)setTimeout(()=>toast("Ключи Supabase не вписаны в файл: объявления видны только в этом браузере."),4500);
  if(!LS("hint",false)){SV("hint",true);setTimeout(()=>toast("Вправо или ✓ — присоединиться к поиску. Влево или ✕ — пропустить."),800)}
 }
 init();
 </script>
-<script>if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
 </body>
 </html>
