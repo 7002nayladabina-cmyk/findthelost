@@ -3,6 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Найдись: поиск пропавших людей и питомцев рядом с вами. Размещайте объявления, присоединяйтесь к поиску.">
+<meta name="theme-color" content="#ff6a00">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Найдись">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Найдись — поиск пропавших людей и питомцев">
+<meta property="og:description" content="Разместите объявление о пропавшем человеке или питомце и найдите тех, кто ищет рядом.">
+<meta property="og:image" content="https://7002nayladabina-cmyk.github.io/findthelost/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Найдись — поиск пропавших людей и питомцев</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap">
 <style>
@@ -110,6 +123,12 @@ dialog{border:0;border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .dl svg{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .btn .dl{gap:8px;justify-content:center}
 .btn .dl svg{width:20px;height:20px}
+.pin{position:absolute;width:22px;height:22px;margin:-22px 0 0 -11px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--o);border:3px solid #000;pointer-events:none}
+.pin.k{background:#000;border-color:var(--o)}
+.vmap,#fmap{height:210px;border:2px solid var(--fg);border-radius:14px}
+.mz{position:absolute;right:8px;top:8px;display:grid;gap:6px}.mz button{width:36px;height:36px;border-radius:10px;border:2px solid #000;background:#fff;color:#000;font-size:22px;font-weight:700;cursor:pointer}
+.mc{position:absolute;left:6px;bottom:4px;font-size:11px;background:#fff;color:#000;padding:0 4px}
+.lg{display:flex;gap:6px;margin-top:8px}.lg button{border:2px solid #000;background:#fff;color:#000;border-radius:999px;padding:2px 10px;font-weight:800;cursor:pointer}
 </style>
 </head>
 <body>
@@ -117,7 +136,7 @@ dialog{border:0;border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 <main class="stage"><div id="deck"></div>
 <div class="ctl" id="ctl" hidden><button class="rb no" id="bNo" aria-label="Пропустить"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg></button><button class="rb yes" id="bYes" aria-label="Присоединиться к поиску"><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg></button></div></main>
 <div id="scrim" hidden></div>
-<aside id="drawer" aria-label="Меню"><div class="dh"><span class="logo">Найдись</span><div id="who">Гость</div></div>
+<aside id="drawer" aria-label="Меню"><div class="dh"><span class="logo">Найдись</span><div id="who">Гость</div><div class="lg"><button data-lang="ru">RU</button><button data-lang="hy">ՀԱՅ</button><button data-lang="en">EN</button></div></div>
 <button class="dr" data-s="account"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Аккаунт</span></button><button class="dr" data-s="chats"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Чаты</span><span class="bd" id="bd" hidden></span></button><button class="dr" data-s="joined"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M8 11l2 2 4-4"/></svg>Мои поиски</span></button><button class="dr" data-s="all"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Все пропавшие</span></button><button class="dr" data-s="found"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>Найденные</span></button><button class="dr" data-s="mine"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>Мои объявления</span></button><button class="dr" data-s="settings"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Настройки</span></button><button class="dr" id="dAddBtn"><span class="dl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Сообщить о пропаже</span></button></aside>
 <section id="sheet" hidden><div class="sh"><header><button class="btn alt sm" id="back">Назад</button><h2 id="shT"></h2></header><div id="shB"></div></div></section>
 
@@ -129,11 +148,12 @@ dialog{border:0;border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 <label>Где потерялся<input name="place" required maxlength="140" placeholder="Город, район, улица"></label>
 <div class="row"><label>Радиус<select name="radius"><option value="0.5">500 м</option><option value="1" selected>1 км</option><option value="3">3 км</option></select></label><label>Когда<input type="datetime-local" name="when" required></label></div>
 <button type="button" class="btn alt sm" id="loc">Отметить моё местоположение</button><span class="mut" id="locS"></span>
+<div class="row"><button type="button" class="btn" id="mLost" aria-pressed="true">Где пропал(а)</button><button type="button" class="btn alt" id="mSeen" aria-pressed="false">Где видели последний раз</button></div><div id="fmap"></div><span class="mut">Выберите кнопку и нажмите на карту, чтобы поставить отметку.</span>
 <div class="in"><b style="font-size:14px">Фото</b><div class="row"><button type="button" class="btn alt" id="pickBtn">Загрузить фото</button><button type="button" class="btn alt" id="camBtn">Сделать снимок</button></div><img id="phPrev" alt="Предпросмотр фото" hidden style="width:100%;max-height:180px;object-fit:cover;border:3px solid var(--fg);border-radius:12px"><span class="mut" id="phS"></span></div><input type="file" accept="image/*" id="photo" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;border:0;padding:0;pointer-events:none"><input type="file" accept="image/*" capture="environment" id="photo2" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;border:0;padding:0;pointer-events:none">
 <div class="row"><label>Ваше имя<input name="cname" required maxlength="60"></label><label>Телефон<input name="phone" type="tel" required maxlength="30"></label></div>
 <label class="chk"><input type="checkbox" name="showPhone"> Показать телефон в объявлении</label>
 <label class="chk"><input type="checkbox" required> Я вправе публиковать это фото и данные, домашний адрес не указываю.</label></div>
-<div class="row"><button type="button" class="btn alt" id="cancel">Отмена</button><button class="btn">Опубликовать</button></div>
+<div class="row"><button type="button" class="btn alt" id="cancel">Отмена</button><button class="btn" id="sendBtn">Опубликовать</button></div>
 <div class="mut" id="err" role="alert"></div></form></dialog>
 <dialog id="dView"><div id="vBody"></div></dialog>
 <div class="toast" id="toast" hidden role="status"></div>
@@ -243,7 +263,8 @@ const kindT=p=>p.kind==="person"?"Человек":esc(p.species||"Питомец
 const unread=c=>c.lastBy&&c.lastBy!==uid&&(c.lastAt||0)>(seen[c.id]||0);
 const pname=id=>(profiles[id]&&profiles[id].name)||"Участник";
 const isOwn=p=>mine.has(p.id)||(uid&&p.authorId===uid);
-let sndOn=LS("snd",true),AC=null,msgN=null;
+let sndOn=LS("snd",true),AC=null,msgN=null,dip=null;
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();dip=e});
 function unlockAudio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume()}catch(e){}}
 ["pointerdown","keydown","touchstart"].forEach(ev=>addEventListener(ev,unlockAudio,{passive:true}));
 function ding(){try{unlockAudio();if(AC){const t=AC.currentTime;[[880,0],[1318,.14]].forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.35,t+d+.02);g.gain.exponentialRampToValueAtTime(.001,t+d+.5);o.connect(g);g.connect(AC.destination);o.start(t+d);o.stop(t+d+.55)})}if(navigator.vibrate)navigator.vibrate([120,60,120])}catch(e){}}
@@ -293,7 +314,7 @@ function checkChanges(old,first){if(first)return;const ids=new Set(old.map(o=>o.
 function setDrawer(o){$("#drawer").classList.toggle("open",o);$("#scrim").hidden=!o;$("#menuBtn").setAttribute("aria-expanded",o)}
 $("#menuBtn").onclick=()=>setDrawer(!$("#drawer").classList.contains("open"));$("#scrim").onclick=()=>setDrawer(false);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")setDrawer(false)});
-$("#drawer").onclick=e=>{const b=e.target.closest(".dr");if(!b)return;if(b.id==="dAddBtn"){setDrawer(false);openAdd();return}openSheet(b.dataset.s)};
+$("#drawer").onclick=e=>{const lg=e.target.closest("[data-lang]");if(lg){SV("lang",lg.dataset.lang);location.reload();return}const b=e.target.closest(".dr");if(!b)return;if(b.id==="dAddBtn"){setDrawer(false);openAdd();return}openSheet(b.dataset.s)};
 const T={account:"Аккаунт",chats:"Чаты",joined:"Мои поиски",all:"Все пропавшие",found:"Найденные",mine:"Мои объявления",settings:"Настройки"};
 function openSheet(n,pid){sh=n;shPid=pid||null;setDrawer(false);$("#sheet").hidden=false;$("#shT").textContent=pid?"Страница автора":T[n];$("#shB").innerHTML="";$("#sheet").scrollTop=0;renderSheet()}
 function closeSheet(){sh=null;$("#sheet").hidden=true;unsubM&&unsubM();unsubM=null;curChat=null}
@@ -308,7 +329,7 @@ function renderSheet(){
  if(sh==="found"){const L=posts.filter(p=>p.status==="found").sort((a,b)=>b.createdAt-a.createdAt);B.innerHTML='<p class="mut">Найдено: '+L.length+'. Спасибо всем, кто искал.</p>'+(L.length?L.map(p=>rowHtml(p)).join(""):'<div class="note">Пока никого не отметили найденным.</div>')}
  if(sh==="joined"){const L=[...joined].map(id=>posts.find(p=>p.id===id)).filter(Boolean);B.innerHTML=L.length?L.map(p=>rowHtml(p,`<p style="margin:-4px 0 12px"><button class="btn alt sm" data-leave="${esc(p.id)}">Выйти из поиска</button></p>`)).join(""):'<div class="note">Вы ещё не присоединились ни к одному поиску. Нажмите ✓ на карточке, и она появится здесь.</div>'}
  if(sh==="mine"){const L=posts.filter(isOwn);B.innerHTML=L.length?L.map(p=>rowHtml(p,p.status==="found"?"":`<p style="margin:-4px 0 12px"><button class="btn sm" data-found="${esc(p.id)}">Отметить найденным</button></p>`)).join(""):'<div class="note">У вас пока нет объявлений. Кнопка «+» вверху создаст первое.</div>'}
- if(sh==="settings"&&!B.firstChild)B.innerHTML=`<div class="in">${LOCAL?'<div class="note">Сейчас сайт работает только на этом компьютере: объявления хранятся в этом браузере, другие люди их не видят. Чтобы сайт стал общим, подключите Supabase (инструкция в начале файла).</div>':""}<h3>Кого показывать</h3><div class="row">${[["all","Все"],["person","Люди"],["pet","Питомцы"]].map(([v,l])=>`<button class="btn alt" data-kind="${v}" aria-pressed="${kindF===v}">${l}</button>`).join("")}</div><h3>Рядом со мной</h3><p class="mut">Сайт подаст звуковой сигнал, когда в радиусе 5 км появится новая карточка, пока страница открыта. Ближайшие карточки идут в ленте первыми.</p><button class="btn alt" id="gp">Определить моё место</button><span class="mut" id="gpS">${me?"Местоположение сохранено":""}</span><h3>Звук</h3><button class="btn alt" id="snd" aria-pressed="${sndOn}">Звук уведомлений: ${sndOn?"вкл":"выкл"}</button><h3>Уведомления</h3><button class="btn alt" id="nt">Включить уведомления браузера</button><span class="mut" id="ntS">Приходят, пока страница открыта.</span><h3>Колода</h3><button class="btn alt" id="rs">Показать пропущенных снова</button></div>`;
+ if(sh==="settings"&&!B.firstChild)B.innerHTML=`<div class="in">${LOCAL?'<div class="note">Сейчас сайт работает только на этом компьютере: объявления хранятся в этом браузере, другие люди их не видят. Чтобы сайт стал общим, подключите Supabase (инструкция в начале файла).</div>':""}<h3>Кого показывать</h3><div class="row">${[["all","Все"],["person","Люди"],["pet","Питомцы"]].map(([v,l])=>`<button class="btn alt" data-kind="${v}" aria-pressed="${kindF===v}">${l}</button>`).join("")}</div><h3>Рядом со мной</h3><p class="mut">Сайт подаст звуковой сигнал, когда в радиусе 5 км появится новая карточка, пока страница открыта. Ближайшие карточки идут в ленте первыми.</p><button class="btn alt" id="gp">Определить моё место</button><span class="mut" id="gpS">${me?"Местоположение сохранено":""}</span><h3>Звук</h3><button class="btn alt" id="snd" aria-pressed="${sndOn}">Звук уведомлений: ${sndOn?"вкл":"выкл"}</button><h3>Уведомления</h3><button class="btn alt" id="nt">Включить уведомления браузера</button><span class="mut" id="ntS">Приходят, пока страница открыта.</span><h3>Приложение</h3><button class="btn alt" id="inst">Установить на телефон</button><span class="mut" id="instS">Значок на главном экране, без адресной строки.</span><h3>Колода</h3><button class="btn alt" id="rs">Показать пропущенных снова</button></div>`;
  if(sh==="account")renderProfile();
  if(sh==="chats")renderChats();
  bdg()
@@ -321,6 +342,7 @@ $("#shB").addEventListener("click",e=>{
  if(e.target.id==="gp")return getPos(p=>{me=p;SV("me",p);sig="";$("#gpS").textContent="Ближайшие теперь первыми"},$("#gpS"));
  if(e.target.id==="nt")return(async()=>{try{if(!window.Notification){$("#ntS").textContent="Браузер не поддерживает уведомления";return}const r=await Notification.requestPermission();$("#ntS").textContent=r==="granted"?"Включено, пока страница открыта":"Разрешение не выдано"}catch(x){$("#ntS").textContent="Не удалось включить"}})();
  if(e.target.id==="rs"){skipped.clear();persist();sig="";toast("Пропущенные вернутся в колоду");return}
+ if(e.target.id==="inst"){if(dip){dip.prompt();dip=null}else $("#instS").textContent="Android: меню браузера (три точки), затем «Установить приложение». iPhone: Safari, «Поделиться», затем «На экран Домой».";return}
  if(e.target.id==="snd"){sndOn=!sndOn;SV("snd",sndOn);e.target.textContent="Звук уведомлений: "+(sndOn?"вкл":"выкл");e.target.setAttribute("aria-pressed",sndOn);if(sndOn)ding();return}
  const c=e.target.closest(".rowc[data-id]");if(c){const p=posts.find(x=>x.id===c.dataset.id);p&&openView(p)}
 });
@@ -369,10 +391,10 @@ async function openChat(p){
 
 /* ---------- новое объявление ---------- */
 let myLoc=null,photoData=null;
-function openAdd(){const f=$("#f");f.reset();photoData=null;myLoc=null;$("#locS").textContent="";$("#phS").textContent="";$("#phPrev").hidden=true;$("#err").textContent="";const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());f.when.value=n.toISOString().slice(0,16);$("#spW").hidden=false;$("#dAdd").showModal()}
-$("#addBtn").onclick=openAdd;$("#cancel").onclick=()=>$("#dAdd").close();
+function openAdd(p){editId=p?p.id:null;const f=$("#f");f.reset();photoData=null;myLoc=null;$("#locS").textContent="";$("#phS").textContent="";$("#phPrev").hidden=true;$("#err").textContent="";const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());f.when.value=n.toISOString().slice(0,16);$("#spW").hidden=false;$("#dAdd").showModal();fillEdit(p)}
+$("#addBtn").onclick=()=>openAdd();$("#cancel").onclick=()=>$("#dAdd").close();
 $("#kind").onchange=e=>$("#spW").hidden=e.target.value==="person";
-$("#loc").onclick=()=>getPos(p=>{myLoc=p;$("#locS").textContent=" Место отмечено"},$("#locS"));
+$("#loc").onclick=()=>getPos(p=>{myLoc=p;$("#locS").textContent=" Место отмечено";mapRefresh(true)},$("#locS"));
 function takePhoto(f){const st=$("#phS"),pv=$("#phPrev");photoData=null;pv.hidden=true;if(!f)return;st.textContent="Загружаем фото…";const rd=new FileReader();rd.onerror=()=>{st.textContent="Не удалось прочитать файл"};rd.onload=()=>{const im=new Image();im.onerror=()=>{st.textContent="Не удалось открыть фото. Попробуйте JPG или PNG."};im.onload=()=>{const k=Math.min(1,720/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);photoData=c.toDataURL("image/jpeg",.72);pv.src=photoData;pv.hidden=false;st.textContent="Фото добавлено"};im.src=rd.result};rd.readAsDataURL(f)}
 ["#photo","#photo2"].forEach(s=>$(s).onchange=e=>takePhoto(e.target.files[0]));
 const pick=s=>{const st=$("#phS");st.textContent="Открываем выбор файла…";try{$(s).value="";$(s).click()}catch(e){st.textContent="Браузер не даёт открыть выбор файла. Вставьте фото из буфера (Ctrl+V) или перетащите его на форму."}setTimeout(()=>{if(st.textContent.startsWith("Открываем"))st.textContent="Если окно выбора не открылось, проверьте разрешения браузера для этого сайта или откройте сайт в Safari или Chrome."},2500)};
@@ -382,7 +404,8 @@ $("#dAdd").addEventListener("dragover",e=>e.preventDefault());$("#dAdd").addEven
 $("#f").onsubmit=async e=>{e.preventDefault();const f=e.target,er=$("#err");
  if(!db){er.textContent="Нет связи с базой данных.";return}
  const d={kind:f.kind.value,species:f.kind.value==="pet"?f.species.value:"",name:f.name.value.trim(),age:f.age.value.trim(),features:f.features.value.trim(),place:f.place.value.trim(),radius:+f.radius.value,when:new Date(f.when.value).getTime(),photo:photoData||"",cname:f.cname.value.trim(),phone:f.phone.value.trim(),showPhone:f.showPhone.checked,code:genCode(),status:"searching",authorId:uid||"",createdAt:Date.now()};
- if(myLoc){d.lat=myLoc.lat;d.lng=myLoc.lng}
+ if(myLoc){d.lat=myLoc.lat;d.lng=myLoc.lng}if(MP.seen){d.seenLat=MP.seen[0];d.seenLng=MP.seen[1]}
+ if(editId){const u={...d};["code","status","authorId","createdAt"].forEach(k=>delete u[k]);if(!photoData)delete u.photo;if(!myLoc){delete u.lat;delete u.lng}try{await db.doc("posts/"+editId).update(u);$("#dAdd").close();toast("Изменения сохранены")}catch(x){er.textContent="Не удалось сохранить изменения"}return}
  try{const r=await db.collection("posts").add(d);if(r&&r.id){mine.add(r.id);persist()}$("#dAdd").close();toast("Объявление опубликовано. ID: "+d.code)}catch(x){er.textContent="Не удалось опубликовать. Возможно, нет прав на запись или фото слишком большое."}};
 
 /* ---------- подробности ---------- */
@@ -393,19 +416,20 @@ function openView(p){
 <h2>${esc(p.name)} <span class="st ${p.status==="found"?"ok":""}">${p.status==="found"?"Найден":"Ищем"}</span></h2><div class="mut">ID ${codeOf(p)}</div>
 <div><b>${kindT(p)}</b>${p.age?", "+esc(p.age):""}</div>${p.features?`<div>${esc(p.features)}</div>`:""}
 <div>Пропал(а): ${esc(p.place)} <span class="mut">(радиус ${p.radius<1?p.radius*1000+" м":p.radius+" км"}, ${ago(p.when||p.createdAt)})</span></div>
-<div>${p.showPhone?`Контакт: ${esc(p.cname)}, <a href="tel:${esc(p.phone)}" style="color:inherit">${esc(p.phone)}</a>`:`Автор: ${esc(p.cname)}. Телефон скрыт, напишите сообщение ниже.`}</div>
-<div class="row">${p.status==="found"?"":`<button class="btn" id="jn">${on?"Вы в поиске ✓":"Присоединиться к поиску"}</button>`}<button class="btn alt" id="seen">Я видел(а)</button>${p.authorId&&p.authorId!==uid?'<button class="btn alt" id="chat">Написать автору</button>':""}${p.authorId?'<button class="btn alt" id="prof">Страница автора</button>':""}<button class="btn alt" id="share">Поделиться</button>${own&&p.status!=="found"?'<button class="btn alt" id="found">Отметить найденным</button>':""}${own?'<button class="btn alt" id="delCard">Удалить карточку</button>':""}</div>
+${(p.lat!=null||p.seenLat!=null)?'<div id="vmap" class="vmap"></div><div class="mut">Оранжевая отметка: пропал(а). Чёрная: видели последний раз.</div>':""}<div>${p.showPhone?`Контакт: ${esc(p.cname)}, <a href="tel:${esc(p.phone)}" style="color:inherit">${esc(p.phone)}</a>`:`Автор: ${esc(p.cname)}. Телефон скрыт, напишите сообщение ниже.`}</div>
+<div class="row">${p.status==="found"?"":`<button class="btn" id="jn">${on?"Вы в поиске ✓":"Присоединиться к поиску"}</button>`}<button class="btn alt" id="seen">Я видел(а)</button>${p.authorId&&p.authorId!==uid?'<button class="btn alt" id="chat">Написать автору</button>':""}${p.authorId?'<button class="btn alt" id="prof">Страница автора</button>':""}<button class="btn alt" id="share">Поделиться</button>${own&&p.status!=="found"?'<button class="btn alt" id="found">Отметить найденным</button>':""}${own?'<button class="btn alt" id="editCard">Редактировать</button><button class="btn alt" id="delCard">Удалить карточку</button>':""}</div>
 <form id="sf" hidden class="in"><label>Где и когда видели<input name="w" required maxlength="160"></label><label>Комментарий<textarea name="c" rows="2" maxlength="400"></textarea></label><button class="btn">Отправить</button></form>
 <h3>Сообщения от людей</h3><div id="sl" class="in"><span class="mut">Пока нет сообщений.</span></div>
 <button class="btn alt sm" id="rep" style="justify-self:start">Пожаловаться на объявление</button></div>`;
- dV.showModal();
+ dV.showModal();if($("#vmap")){const L=p.lat!=null?[p.lat,p.lng]:[p.seenLat,p.seenLng];mkMap($("#vmap"),{lat:L[0],lng:L[1],z:15,pins:[p.lat!=null&&{lat:p.lat,lng:p.lng,cls:""},p.seenLat!=null&&{lat:p.seenLat,lng:p.seenLng,cls:"k"}].filter(Boolean)})}
  $("#vx").onclick=()=>dV.close();
  if($("#jn"))$("#jn").onclick=async()=>{joined.has(p.id)?await leave(p):await join(p);$("#jn").textContent=joined.has(p.id)?"Вы в поиске ✓":"Присоединиться к поиску";sig=""};
  $("#seen").onclick=()=>{$("#sf").hidden=false;$("#sf").w.focus()};
  if($("#chat"))$("#chat").onclick=()=>openChat(p);
  if($("#prof"))$("#prof").onclick=()=>{dV.close();openSheet("account",p.authorId)};
- $("#share").onclick=async()=>{const t=(p.status==="found"?"Найден: ":"Ищем: ")+p.name+", "+p.place+" (ID "+codeOf(p)+")";try{navigator.share?await navigator.share({title:t,text:t,url:location.href}):(await navigator.clipboard.writeText(t+" "+location.href),$("#share").textContent="Скопировано")}catch(e){}};
+ $("#share").onclick=async()=>{const t=(p.status==="found"?"Найден: ":"Ищем: ")+p.name+", "+p.place+" (ID "+codeOf(p)+")",u=location.origin+location.pathname+"?c="+p.id;try{navigator.share?await navigator.share({title:t,text:t,url:u}):(await navigator.clipboard.writeText(t+" "+u),$("#share").textContent="Скопировано")}catch(e){}};
  if($("#found"))$("#found").onclick=async()=>{try{await db.doc("posts/"+p.id).update({status:"found"});dV.close()}catch(e){toast("Не удалось обновить статус")}};
+ if($("#editCard"))$("#editCard").onclick=()=>{dV.close();openAdd(p)};
  if($("#delCard"))twice($("#delCard"),"Нажмите ещё раз: удалить навсегда",async()=>{try{await db.doc("posts/"+p.id).delete();joined.delete(p.id);mine.delete(p.id);skipped.delete(p.id);persist();posts=posts.filter(x=>x.id!==p.id);sig="";dV.close();toast("Карточка удалена");renderDeck();if(sh)renderSheet()}catch(e){toast("Не удалось удалить карточку")}});
  $("#rep").onclick=async()=>{try{await db.collection("reports").add({postId:p.id,createdAt:Date.now()});$("#rep").textContent="Жалоба отправлена"}catch(e){$("#rep").textContent="Не удалось отправить"}};
  $("#sf").onsubmit=async e=>{e.preventDefault();const f=e.target;try{await db.collection("posts/"+p.id+"/sightings").add({where:f.w.value.trim(),comment:f.c.value.trim(),createdAt:Date.now()});f.reset();f.hidden=true}catch(x){toast("Не удалось отправить")}};
@@ -414,11 +438,11 @@ function openView(p){
 
 /* ---------- запуск ---------- */
 async function init(){
- try{if("serviceWorker" in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if(window.caches)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{})}catch(e){}
+ try{if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})}catch(e){}
  renderDeck();
  try{if(CFG_OK){const u=await authUser();uid=u.id;db=DB}else{uid=gk;db=DB}}catch(e){console.error(e);dbErr=String(e&&e.message||e)}
  if(!db){sig="";renderDeck();return}
- db.collection("posts").orderBy("createdAt","desc").limit(300).onSnapshot(s=>{const first=!loaded,old=posts;posts=s.docs.map(d=>({id:d.id,...d.data()}));loaded=true;renderDeck();if(sh)renderSheet();checkChanges(old,first);watchSightings()},()=>{loaded=true;renderDeck()},15000);
+ db.collection("posts").orderBy("createdAt","desc").limit(300).onSnapshot(s=>{const first=!loaded,old=posts;posts=s.docs.map(d=>({id:d.id,...d.data()}));loaded=true;renderDeck();if(sh)renderSheet();checkChanges(old,first);watchSightings();if(first)openLinked()},()=>{loaded=true;renderDeck()},15000);
  db.collection("profiles").onSnapshot(s=>{profiles={};s.docs.forEach(d=>profiles[d.id]=d.data());bdg();if(sh==="account"||sh==="chats")renderSheet()},()=>{});
  loadJoined();
  if(me&&navigator.permissions&&navigator.permissions.query)navigator.permissions.query({name:"geolocation"}).then(r=>{if(r.state==="granted")getPos(p=>{me=p;SV("me",p);sig=""})}).catch(()=>{});
@@ -426,6 +450,43 @@ async function init(){
  if(LOCAL)setTimeout(()=>toast("Ключи Supabase не вписаны в файл: объявления видны только в этом браузере."),4500);
  if(!LS("hint",false)){SV("hint",true);setTimeout(()=>toast("Вправо или ✓ — присоединиться к поиску. Влево или ✕ — пропустить."),800)}
 }
+/* v4: карта, правка, ссылка на карточку, языки */
+function mkMap(el,o){const S=256;let z=o.z||13,c=[o.lat,o.lng],pins=o.pins||[];
+ el.style.position="relative";el.style.overflow="hidden";el.style.touchAction="none";el.style.background="#fff";
+ const w=(la,ln,zz)=>{const n=S*2**zz,s=Math.sin(la*Math.PI/180);return[(ln+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
+ const inv=(x,y,zz)=>{const n=S*2**zz;return[Math.atan(Math.sinh(Math.PI*(1-2*y/n)))*180/Math.PI,x/n*360-180]};
+ const geo=()=>{const W=el.clientWidth||300,H=el.clientHeight||210,[cx,cy]=w(c[0],c[1],z);return{W,H,x0:cx-W/2,y0:cy-H/2,cx,cy}};
+ function draw(){const g=geo(),n=2**z;let h="";
+  for(let tx=Math.floor(g.x0/S);tx<=Math.floor((g.x0+g.W)/S);tx++)for(let ty=Math.floor(g.y0/S);ty<=Math.floor((g.y0+g.H)/S);ty++){if(ty<0||ty>=n)continue;h+=`<img alt="" draggable="false" src="https://tile.openstreetmap.org/${z}/${((tx%n)+n)%n}/${ty}.png" style="position:absolute;left:${Math.round(tx*S-g.x0)}px;top:${Math.round(ty*S-g.y0)}px;width:${S}px;height:${S}px">`}
+  pins.forEach(p=>{if(p.lat==null)return;const [px,py]=w(p.lat,p.lng,z);h+=`<div class="pin ${p.cls||""}" style="left:${px-g.x0}px;top:${py-g.y0}px"></div>`});
+  el.innerHTML=h+'<div class="mz"><button type="button" data-z="1" aria-label="+">+</button><button type="button" data-z="-1" aria-label="-">−</button></div><div class="mc">© OpenStreetMap</div>'}
+ let d=null;
+ el.onpointerdown=e=>{if(e.target.closest(".mz"))return;d={x:e.clientX,y:e.clientY,m:0,c0:geo()};el.setPointerCapture(e.pointerId)};
+ el.onpointermove=e=>{if(!d)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;d.m=Math.max(d.m,Math.abs(dx)+Math.abs(dy));if(d.m>5){c=inv(d.c0.cx-dx,d.c0.cy-dy,z);draw()}};
+ el.onpointerup=e=>{if(!d)return;const t=d;d=null;if(t.m<=5&&o.onTap){const r=el.getBoundingClientRect(),g=geo();o.onTap(...inv(g.x0+e.clientX-r.left,g.y0+e.clientY-r.top,z))}};
+ el.onclick=e=>{const b=e.target.closest("[data-z]");if(b){z=Math.max(3,Math.min(18,z+ +b.dataset.z));draw()}};
+ el.onwheel=e=>{e.preventDefault();z=Math.max(3,Math.min(18,z+(e.deltaY<0?1:-1)));draw()};
+ draw();return{setPins(a){pins=a;draw()},setCenter(la,ln,zz){c=[la,ln];if(zz)z=zz;draw()}}}
+let MP={mode:"lost",seen:null,map:null},editId=null;
+function mapPins(){return[myLoc&&{lat:myLoc.lat,lng:myLoc.lng,cls:""},MP.seen&&{lat:MP.seen[0],lng:MP.seen[1],cls:"k"}].filter(Boolean)}
+function mapRefresh(ctr){if(!MP.map)return;MP.map.setPins(mapPins());if(ctr&&myLoc)MP.map.setCenter(myLoc.lat,myLoc.lng,15)}
+function setMode(m){MP.mode=m;$("#mLost").setAttribute("aria-pressed",m==="lost");$("#mSeen").setAttribute("aria-pressed",m==="seen");$("#mLost").className=m==="lost"?"btn":"btn alt";$("#mSeen").className=m==="seen"?"btn":"btn alt"}
+$("#mLost").onclick=()=>setMode("lost");$("#mSeen").onclick=()=>setMode("seen");
+function fillEdit(p){const f=$("#f");$("#dAdd h2").textContent=p?"Редактирование":"Новое объявление";$("#sendBtn").textContent=p?"Сохранить":"Опубликовать";
+ MP.seen=p&&p.seenLat!=null?[p.seenLat,p.seenLng]:null;myLoc=p&&p.lat!=null?{lat:p.lat,lng:p.lng}:null;setMode("lost");
+ const c=myLoc||MP.seen||me||{lat:40.1792,lng:44.4991};
+ MP.map=mkMap($("#fmap"),{lat:c.lat??c[0],lng:c.lng??c[1],z:(myLoc||MP.seen||me)?14:8,pins:mapPins(),onTap(la,ln){if(MP.mode==="lost")myLoc={lat:la,lng:ln};else MP.seen=[la,ln];$("#locS").textContent=" Отметка поставлена";mapRefresh()}});
+ if(!p)return;f.kind.value=p.kind;$("#spW").hidden=p.kind==="person";if(p.species)f.species.value=p.species;f.name.value=p.name||"";f.age.value=p.age||"";f.features.value=p.features||"";f.place.value=p.place||"";f.radius.value=String(p.radius||1);
+ f.when.value=new Date((p.when||Date.now())-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16);f.cname.value=p.cname||"";f.phone.value=p.phone||"";f.showPhone.checked=!!p.showPhone}
+async function openLinked(){const q=new URLSearchParams(location.search),c=q.get("c");if(q.get("chats"))openSheet("chats");if(!c)return;let p=posts.find(x=>x.id===c);if(!p&&db){try{const r=await db.doc("posts/"+c).get();if(r.exists)p={id:c,...r.data()}}catch(e){}}if(p)openView(p);else toast("Карточка не найдена или удалена")}
+const I18={en:{"Аккаунт":"Account","Чаты":"Chats","Мои поиски":"My searches","Все пропавшие":"All missing","Найденные":"Found","Мои объявления":"My posts","Настройки":"Settings","Сообщить о пропаже":"Report missing","Новое объявление":"New post","Редактирование":"Editing","Кто пропал":"Who is missing","Питомец":"Pet","Человек":"Person","Вид":"Kind","Собака":"Dog","Кошка":"Cat","Другое":"Other","Имя или кличка":"Name","Возраст":"Age","Приметы":"Description","Где потерялся":"Where lost","Радиус":"Radius","Когда":"When","Фото":"Photo","Загрузить фото":"Upload photo","Сделать снимок":"Take photo","Ваше имя":"Your name","Телефон":"Phone","Отмена":"Cancel","Опубликовать":"Publish","Закрыть":"Close","Присоединиться к поиску":"Join the search","Я видел(а)":"I saw them","Написать автору":"Message author","Страница автора":"Author page","Поделиться":"Share","Редактировать":"Edit","Удалить карточку":"Delete card","Отметить найденным":"Mark as found","Сохранить":"Save","Назад":"Back","Гость":"Guest","Кого показывать":"Show","Все":"All","Люди":"People","Питомцы":"Pets","Рядом со мной":"Near me","Звук":"Sound","Уведомления":"Notifications","Колода":"Deck","Где пропал(а)":"Where lost","Где видели последний раз":"Last seen","Пропустить":"Skip"},
+hy:{"Аккаунт":"Հաշիվ","Чаты":"Զրույցներ","Мои поиски":"Իմ որոնումները","Все пропавшие":"Բոլոր կորածները","Найденные":"Գտնվածները","Мои объявления":"Իմ հայտարարությունները","Настройки":"Կարգավորումներ","Сообщить о пропаже":"Հայտնել կորուստի մասին","Новое объявление":"Նոր հայտարարություն","Редактирование":"Խմբագրում","Кто пропал":"Ով է կորել","Питомец":"Ընտանի կենդանի","Человек":"Մարդ","Вид":"Տեսակ","Собака":"Շուն","Кошка":"Կատու","Другое":"Այլ","Имя или кличка":"Անուն կամ մականուն","Возраст":"Տարիք","Приметы":"Նշաններ","Где потерялся":"Որտեղ է կորել","Радиус":"Շառավիղ","Когда":"Երբ","Фото":"Լուսանկար","Загрузить фото":"Վերբեռնել լուսանկար","Сделать снимок":"Նկարել","Ваше имя":"Ձեր անունը","Телефон":"Հեռախոս","Отмена":"Չեղարկել","Опубликовать":"Հրապարակել","Закрыть":"Փակել","Присоединиться к поиску":"Միանալ որոնմանը","Я видел(а)":"Ես տեսել եմ","Написать автору":"Գրել հեղինակին","Страница автора":"Հեղինակի էջը","Поделиться":"Կիսվել","Редактировать":"Խմբագրել","Удалить карточку":"Ջնջել քարտը","Отметить найденным":"Նշել գտնված","Сохранить":"Պահպանել","Назад":"Հետ","Гость":"Հյուր","Кого показывать":"Ում ցույց տալ","Все":"Բոլորը","Люди":"Մարդիկ","Питомцы":"Կենդանիներ","Рядом со мной":"Ինձ մոտ","Звук":"Ձայն","Уведомления":"Ծանուցումներ","Колода":"Քարտեր","Где пропал(а)":"Որտեղ է կորել","Где видели последний раз":"Վերջին անգամ որտեղ են տեսել","Пропустить":"Բաց թողնել"}};
+Object.assign(I18.en,{"Карточка не найдена или удалена":"Card not found or deleted"});
+Object.assign(I18.hy,{"Карточка не найдена или удалена":"Քարտը չի գտնվել կամ ջնջվել է"});
+let LANG=LS("lang","ru");document.documentElement.lang=LANG;
+let trBusy=false;function tr(){if(LANG==="ru"||trBusy)return;trBusy=true;const d=I18[LANG]||{},w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const s=n.nodeValue.trim();if(s&&d[s])n.nodeValue=n.nodeValue.replace(s,d[s])}
+ document.querySelectorAll("[placeholder],[aria-label]").forEach(e=>["placeholder","aria-label"].forEach(a=>{const v=e.getAttribute(a);if(v&&d[v])e.setAttribute(a,d[v])}));trBusy=false}
+if(LANG!=="ru"){new MutationObserver(()=>tr()).observe(document.body,{childList:true,subtree:true,characterData:true});tr()}
 init();
 </script>
 </body>
